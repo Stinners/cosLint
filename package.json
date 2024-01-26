@@ -1,0 +1,20 @@
+{
+  "name": "cosmosqueryparser",
+  "version": "0.0.1",
+  "description": "",
+  "main": "src/main.ts",
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "check": "tsc --noEmit",
+    "run": "node ./dist/src/main.js"
+  },
+  "author": "Chris Stinson",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  }
+}
