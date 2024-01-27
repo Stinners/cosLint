@@ -5,29 +5,24 @@ function getTokenTs(text: string): Array<TokenT> {
     return tokenizer.tokens.map(t => t.type);
 }
 
-function expectToken(text: string, token_type: TokenT, value: any = undefined) {
+function expectToken(text: string, token_type: TokenT): Token {
     let tokenizer = new Tokenizer(text);
     let tokens = tokenizer.tokens;
 
     expect(tokens.length).toBe(1);
-    expect(tokens[0].type).toBe(token_type);
-
-    if (value != undefined) {
-        expect(tokens[0]).toStrictEqual(value);
-    }
+    let token = tokens[0];
+    expect(token.text).toBe(text);
+    expect(token.type).toBe(token_type);
+    return token;
 }
 
 function expectNumber(text: string) {
-    let tokenizer = new Tokenizer(text);
-    let token = tokenizer.tokens[0];
-
-    expect(tokenizer.tokens).toHaveLength(1);
-    expect(token.text).toBe(text);
+    let token = expectToken(text, TokenT.NUMBER);
     expect(token.value).toBe(Number(text)); // This could cause problems with floats
 }
 
 
-describe("Tokenizer Tests", () => {
+describe("Single Token Tests", () => {
     test("Can create tokenizer", () => {
         let tokenizer = new Tokenizer("");
         expect(tokenizer.tokens).toHaveLength(0);
@@ -67,8 +62,27 @@ describe("Tokenizer Tests", () => {
         expectToken("_test", TokenT.IDENTIFIER);
     })
 
+    test("Can Tokenize operators", () => {
+        expectToken("<", TokenT.OPERATOR);
+        expectToken("<=", TokenT.OPERATOR);
+        expectToken("+", TokenT.OPERATOR);
+        expectToken("-", TokenT.OPERATOR);
+        expectToken("==", TokenT.OPERATOR);
+        expectToken("/", TokenT.OPERATOR);
+        expectToken("!", TokenT.OPERATOR);
+    })
 
-    // TODO write tests for these
+    // TODO verify that both types of strings are allowed
+    test("Can tokenize strings", () => {
+        expectToken('"test"', TokenT.STRING);
+        expectToken("'test'", TokenT.STRING);
+        expectToken("'test\n'", TokenT.STRING);
+        expectToken("'test  test'", TokenT.STRING);
+        expectToken("'test\\'test'", TokenT.STRING);
+    })
+
+
+    // TODO write tests invalid number types
     // Think about what these should actually tokenize as
     // Invalid numbers 
     // 1.0.0  Multiple decimal points 
@@ -90,12 +104,10 @@ describe("Tokenizer Tests", () => {
         const tokenizer = new Tokenizer("  \t\n ");
         expect(tokenizer.tokens).toHaveLength(0);
     });
+})
 
-    test("Simple Select Query", () => {
-        let tokens = getTokenTs("SELECT * FROM c");
-        expect(tokens).toStrictEqual([TokenT.SELECT, TokenT.STAR, TokenT.FROM, TokenT.IDENTIFIER]);
-    })
 
+describe("Tokenizer phrase tests", () => {
     test("Simple Select Query", () => {
         let tokens = getTokenTs("SELECT * FROM c");
         expect(tokens).toStrictEqual([TokenT.SELECT, TokenT.STAR, TokenT.FROM, TokenT.IDENTIFIER]);

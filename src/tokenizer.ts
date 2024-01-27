@@ -35,7 +35,6 @@ export class Tokenizer {
     
     private isNotAtEnd = (): boolean => this.next < this.source.length;
     private advance = (): string => this.source[this.next++];
-    private skip = (): void => { this.start++ };
     private peek = (): string => this.isNotAtEnd() ? this.source[this.next] : "\0";
     private span = (): string => this.source.slice(this.start, this.next);
 
@@ -71,6 +70,9 @@ export class Tokenizer {
     private identifierInner = (c: string): boolean => /\w/.test(c);
 
     // Methods for testing tokens 
+    
+    // If c is the start of an operator, scan past it an returns true
+    // if c is no the start if an operator, this does not advance the scanner
     private isOperator(c: string) {
         if (["<", ">", "!", "="].includes(c)) {
             this.match("=");
@@ -96,7 +98,9 @@ export class Tokenizer {
         }
     }
 
-    private ScanIdentifier(): TokenT {
+    private isIdentifierStart = (c: string): boolean => /[a-zA-Z]|_/.test(c);
+
+    private scanIdentifier(): TokenT {
         // Scan to the end of the identifier 
         this.scanWhile(this.identifierInner);
 
@@ -146,6 +150,33 @@ export class Tokenizer {
         this.scanWhile(this.isDigit);
     }
 
+    /// ======================== Scanning Strings ===========================
+    
+    private isQuote = (c: string): boolean => ['"', "'"].includes(c);
+
+    private scanString(quote_type: string) {
+        // Advance past the open quote
+        this.advance();
+
+        while (true) {
+            let next = this.peek();
+            if (next == "\0") {
+                throw new Error("Encountered end of file while in string");
+            }
+            else if (next == quote_type) {
+                break;
+            }
+            else if (next == "\\") {
+                // Skip escaped characters 
+                this.advance();
+            }
+            this.advance();
+        }
+
+        // Advance past the close quote
+        this.advance();
+    }
+
     //===========================================================================
 
     // Reads the next token
@@ -165,9 +196,16 @@ export class Tokenizer {
         else if (this.isOperator(c)) {
             this.addToken(TokenT.OPERATOR);
         }
-        else {
-            let tokenType = this.ScanIdentifier();
+        else if (this.isQuote(c)) {
+            this.scanString(c);
+            this.addToken(TokenT.STRING);
+        }
+        else if (this.isIdentifierStart(c)) {
+            let tokenType = this.scanIdentifier();
             this.addToken(tokenType);
+        }
+        else {
+            this.addToken(TokenT.UNKNOWN);
         }
     }
 }
@@ -186,7 +224,9 @@ export enum TokenT {
     // Literals
     NUMBER, STRING,
 
-    IDENTIFIER 
+    IDENTIFIER ,
+
+    UNKNOWN
 }
 
 const T = TokenT;
