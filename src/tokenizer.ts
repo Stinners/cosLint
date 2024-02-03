@@ -226,7 +226,7 @@ export enum TokenT {
 
     IDENTIFIER ,
 
-    UNKNOWN
+    UNKNOWN, ENDSTREAM
 }
 
 const T = TokenT;
