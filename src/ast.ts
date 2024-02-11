@@ -4,9 +4,12 @@ export enum PrimaryT { NUMBER, STRING, IDENTIFIER }
 
 export type Primary = { type: PrimaryT.NUMBER, value: number } 
                     | { type: PrimaryT.STRING, value: string } 
-                    | { type: PrimaryT.IDENTIFIER, value: string } 
+                    | { type: PrimaryT.IDENTIFIER, value: string };
 
-export type Proj =  "*" | Primary;
+// TODO support arbitrary index expressions
+export type PathExpr = Array<string | Number>;                    
+
+export type Proj =  "*" | Primary | PathExpr;
 
 // ============ Clauses =============
 

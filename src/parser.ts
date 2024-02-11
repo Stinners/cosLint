@@ -1,4 +1,4 @@
-import { Token, TokenT } from "../src/tokenizer";
+import { Token, TokenT, Tokenizer } from "../src/tokenizer";
 import * as ast from "../src/ast";
 
 const StreamEnd: Token = { type: TokenT.UNKNOWN, text: "<END OF TOKENS>", start: -1, end: -1 };
@@ -24,6 +24,13 @@ class Parser {
 
     public parse(): ast.Select {
         return this.parseSelect();
+    }
+
+    public static parse_text(text: string) {
+        let tokenizer = new Tokenizer(text);
+        let tokens = tokenizer.tokens;
+        let parser = new Parser(text, tokens);
+        parser.parse();
     }
 
     private isNotAtEnd = (): boolean => this.next < this.tokens.length;
@@ -52,43 +59,49 @@ class Parser {
     private parsePrimary(): ast.Primary {
         let token = this.peek();
         let { type, value } = token;
-        let primary: ast.Primary;
 
-        if (type == TokenT.NUMBER) {
-            primary = { type: ast.PrimaryT.NUMBER, value }
+        if (type == TokenT.STRING) {
+            return { type: ast.PrimaryT.STRING, value: token.text }
         } 
-        else if (type == TokenT.STRING) {
-            primary = { type: ast.PrimaryT.STRING, value: token.text }
-        }
         else if (type == TokenT.IDENTIFIER) {
-            primary = { type: ast.PrimaryT.IDENTIFIER, value: token.text }
+            return { type: ast.PrimaryT.STRING, value: token.text }
+        }
+        else if (type == TokenT.NUMBER) {
+            return { type: ast.PrimaryT.NUMBER, value }
         }
         else {
             throw new ParserError("Number, String or Identifier", token.text);
         }
 
-        this.advance()
-        return primary;
     }
 
+
     //=============== Parsing Clauses ======================
+
+    private parseProj(): ast.Proj {
+        if (this.match(TokenT.STAR)) {
+            return "*";
+        }
+        return this.parsePrimary();
+    }
+    
 
     private parseSelect(): ast.Select {
         this.expect(TokenT.SELECT);
 
-        let projections = [];
+        let projections: ast.Proj[] = [];
         while (true) {
             try {
-                let value = this.parsePrimary();
-                projections.push(value);
-            } 
-            catch (ParserError) {
+                let proj = this.parseProj();
+                projections.push(proj);
+                this.match(TokenT.COMMA);
+            }
+            catch (Exception) {
                 break;
             }
-            this.match(TokenT.COMMA);
         }
-        this.expect(TokenT.WHERE);
 
+        this.expect(TokenT.FROM);
         let from = this.expect(TokenT.IDENTIFIER);
 
         return { projections, from: from.text };
